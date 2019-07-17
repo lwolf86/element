@@ -68,6 +68,10 @@
     &::placeholder {
       color: $--color-text-placeholder;
     }
+
+    &.el-bottomLine{
+      border-bottom: 1px solid #2182fc;
+    }
   }
 
   .el-range-separator {

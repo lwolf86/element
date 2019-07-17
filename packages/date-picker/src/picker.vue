@@ -57,8 +57,8 @@
       :name="name && name[0]"
       @input="handleStartInput"
       @change="handleStartChange"
-      @focus="handleFocus"
-      class="el-range-input">
+      @focus="handleStartFocus"
+      :class="['el-range-input', startFocusClass]">
     <slot name="range-separator">
       <span class="el-range-separator">{{ rangeSeparator }}</span>
     </slot>
@@ -72,8 +72,8 @@
       :name="name && name[1]"
       @input="handleEndInput"
       @change="handleEndChange"
-      @focus="handleFocus"
-      class="el-range-input">
+      @focus="handleEndFocus"
+      :class="['el-range-input', endFocusClass]">
     <i
       @click="handleClickIcon"
       v-if="haveTrigger"
@@ -388,6 +388,17 @@ export default {
     validateEvent: {
       type: Boolean,
       default: true
+    },
+    isSingleDateSelect: {
+      type: Boolean,
+      default: false
+    },
+    isAutoChangeEndDate: {
+      type: Boolean,
+      default: false
+    },
+    stayMin: {
+      default: 1
     }
   },
 
@@ -401,7 +412,9 @@ export default {
       showClose: false,
       userInput: null,
       valueOnOpen: null, // value when picker opens, used to determine whether to emit change
-      unwatchPickerOptions: null
+      unwatchPickerOptions: null,
+      isStartFocus: false,
+      isEndFocus: false
     };
   },
 
@@ -478,6 +491,14 @@ export default {
 
     triggerClass() {
       return this.prefixIcon || (this.type.indexOf('time') !== -1 ? 'el-icon-time' : 'el-icon-date');
+    },
+
+    startFocusClass() {
+      return this.isSingleDateSelect && this.isStartFocus ? 'el-bottomLine' : '';
+    },
+
+    endFocusClass() {
+      return this.isSingleDateSelect && this.isEndFocus ? 'el-bottomLine' : '';
     },
 
     selectionMode() {
@@ -712,6 +733,8 @@ export default {
     handleClose() {
       if (!this.pickerVisible) return;
       this.pickerVisible = false;
+      this.isStartFocus = false;
+      this.isEndFocus = false;
 
       if (this.type === 'dates') {
         // restore to former value
@@ -727,10 +750,26 @@ export default {
     handleFocus() {
       const type = this.type;
 
+      if (this.isSingleDateSelect && this.pickerVisible && this.picker) {
+        this.picker.isStartFocus = this.isStartFocus;
+        this.picker.isEndFocus = this.isEndFocus;
+      }
       if (HAVE_TRIGGER_TYPES.indexOf(type) !== -1 && !this.pickerVisible) {
         this.pickerVisible = true;
       }
       this.$emit('focus', this);
+    },
+
+    handleStartFocus() {
+      this.isStartFocus = true;
+      this.isEndFocus = false;
+      this.handleFocus();
+    },
+
+    handleEndFocus() {
+      this.isStartFocus = false;
+      this.isEndFocus = true;
+      this.handleFocus();
     },
 
     handleKeydown(event) {
@@ -789,14 +828,18 @@ export default {
     handleRangeClick() {
       const type = this.type;
 
-      if (HAVE_TRIGGER_TYPES.indexOf(type) !== -1 && !this.pickerVisible) {
-        this.pickerVisible = true;
+      if (!this.isSingleDateSelect) {
+        if (HAVE_TRIGGER_TYPES.indexOf(type) !== -1 && !this.pickerVisible) {
+          this.pickerVisible = true;
+        }
+        this.$emit('focus', this);
       }
-      this.$emit('focus', this);
     },
 
     hidePicker() {
       if (this.picker) {
+        this.picker.isStartFocus = this.isStartFocus;
+        this.picker.isEndFocus = this.isEndFocus;
         this.picker.resetView && this.picker.resetView();
         this.pickerVisible = this.picker.visible = false;
         this.destroyPopper();
@@ -813,6 +856,8 @@ export default {
       this.updatePopper();
 
       this.picker.value = this.parsedValue;
+      this.picker.isStartFocus = this.isStartFocus;
+      this.picker.isEndFocus = this.isEndFocus;
       this.picker.resetView && this.picker.resetView();
 
       this.$nextTick(() => {
@@ -831,6 +876,9 @@ export default {
       this.picker.selectionMode = this.selectionMode;
       this.picker.unlinkPanels = this.unlinkPanels;
       this.picker.arrowControl = this.arrowControl || this.timeArrowControl || false;
+      this.picker.isSingleDateSelect = this.isSingleDateSelect;
+      this.picker.isAutoChangeEndDate = this.isAutoChangeEndDate;
+      this.picker.stayMin = this.stayMin;
       this.$watch('format', (format) => {
         this.picker.format = format;
       });
@@ -868,9 +916,21 @@ export default {
       this.picker.$on('dodestroy', this.doDestroy);
       this.picker.$on('pick', (date = '', visible = false) => {
         this.userInput = null;
-        this.pickerVisible = this.picker.visible = visible;
-        this.emitInput(date);
-        this.picker.resetView && this.picker.resetView();
+        if (this.isSingleDateSelect) {
+          // 新功能走这的逻辑
+          this.emitInput(date);
+          if (this.isStartFocus) {
+            this.handleEndFocus();
+          } else if (this.isEndFocus) {
+            this.isEndFocus = false;
+            this.pickerVisible = this.picker.visible = visible;
+            this.picker.resetView && this.picker.resetView();
+          }
+        } else {
+          this.pickerVisible = this.picker.visible = visible;
+          this.emitInput(date);
+          this.picker.resetView && this.picker.resetView();
+        }
       });
 
       this.picker.$on('select-range', (start, end, pos) => {

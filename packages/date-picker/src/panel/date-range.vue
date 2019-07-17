@@ -120,7 +120,12 @@
               :disabled-date="disabledDate"
               @changerange="handleChangeRange"
               :first-day-of-week="firstDayOfWeek"
-              @pick="handleRangePick">
+              @pick="handleRangePick"
+              :is-single-date-select="isSingleDateSelect"
+              :is-auto-change-end-date="isAutoChangeEndDate"
+              :is-start-focus="isStartFocus"
+              :is-end-focus="isEndFocus"
+              :stay-min="stayMin">
             </date-table>
           </div>
           <div class="el-picker-panel__content el-date-range-picker__content is-right">
@@ -159,7 +164,12 @@
               :disabled-date="disabledDate"
               @changerange="handleChangeRange"
               :first-day-of-week="firstDayOfWeek"
-              @pick="handleRangePick">
+              @pick="handleRangePick"
+              :is-single-date-select="isSingleDateSelect"
+              :is-auto-change-end-date="isAutoChangeEndDate"
+              :is-start-focus="isStartFocus"
+              :is-end-focus="isEndFocus"
+              :stay-min="stayMin">
             </date-table>
           </div>
         </div>
@@ -344,7 +354,12 @@
         timeUserInput: {
           min: null,
           max: null
-        }
+        },
+        isSingleDateSelect: false,
+        isAutoChangeEndDate: false,
+        isStartFocus: false,
+        isEndFocus: false,
+        stayMin: 1
       };
     },
 

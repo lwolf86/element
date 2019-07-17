@@ -32,7 +32,7 @@
 </template>
 
 <script>
-  import { getFirstDayOfMonth, getDayCountOfMonth, getWeekNumber, getStartDateOfMonth, prevDate, nextDate, isDate, clearTime as _clearTime} from 'element-ui/src/utils/date-util';
+  import { getFirstDayOfMonth, getDayCountOfMonth, getWeekNumber, getStartDateOfMonth, prevDate, nextDate, isDate, clearTime as _clearTime, diffDays} from 'element-ui/src/utils/date-util';
   import Locale from 'element-ui/src/mixins/locale';
   import { arrayFindIndex, arrayFind, coerceTruthyValueToArray } from 'element-ui/src/utils/util';
 
@@ -98,6 +98,25 @@
             selecting: false
           };
         }
+      },
+      isSingleDateSelect: {
+        type: Boolean,
+        default: false
+      },
+      isAutoChangeEndDate: {
+        type: Boolean,
+        default: false
+      },
+      isStartFocus: {
+        type: Boolean,
+        default: false
+      },
+      isEndFocus: {
+        type: Boolean,
+        default: false
+      },
+      stayMin: {
+        default: 1
       }
     },
 
@@ -346,7 +365,13 @@
       },
 
       handleMouseMove(event) {
-        if (!this.rangeState.selecting) return;
+        if (!this.isSingleDateSelect && !this.rangeState.selecting) return;
+
+        if (this.isSingleDateSelect) {
+          if (this.isStartFocus) {
+            return;
+          }
+        }
 
         let target = event.target;
         if (target.tagName === 'SPAN') {
@@ -399,16 +424,57 @@
         const newDate = this.getDateOfCell(row, column);
 
         if (this.selectionMode === 'range') {
-          if (!this.rangeState.selecting) {
-            this.$emit('pick', {minDate: newDate, maxDate: null});
-            this.rangeState.selecting = true;
-          } else {
-            if (newDate >= this.minDate) {
-              this.$emit('pick', {minDate: this.minDate, maxDate: newDate});
-            } else {
-              this.$emit('pick', {minDate: newDate, maxDate: this.minDate});
+          if (this.isSingleDateSelect) {
+            if (this.isStartFocus) {
+              if (!this.rangeState.selecting && this.minDate == null) {
+                this.$emit('pick', {minDate: newDate, maxDate: null});
+                this.rangeState.selecting = true;
+              } else {
+                if (this.maxDate == null) {
+                  if (newDate >= this.minDate) {
+                    this.$emit('pick', {minDate: this.minDate, maxDate: newDate});
+                  } else {
+                    this.$emit('pick', {minDate: newDate, maxDate: null});
+                  }
+                } else {
+                  if (this.isAutoChangeEndDate) {
+                    const diff = diffDays(this.minDate, this.maxDate);
+                    const newMaxDate = nextDate(newDate, diff);
+                    this.$emit('pick', {minDate: newDate, maxDate: newMaxDate});
+                  } else {
+                    if (newDate < this.maxDate) {
+                      this.$emit('pick', {minDate: newDate, maxDate: this.maxDate});
+                    } else {
+                      const newMaxDate = nextDate(newDate, this.stayMin);
+                      this.$emit('pick', {minDate: newDate, maxDate: newMaxDate});
+                    }
+                  }
+                }
+              }
+            } else if (this.isEndFocus) {
+              if (!this.rangeState.selecting) {
+                this.$emit('pick', {minDate: newDate, maxDate: null});
+                this.rangeState.selecting = true;
+              } else {
+                if (newDate >= this.minDate) {
+                  this.$emit('pick', {minDate: this.minDate, maxDate: newDate});
+                } else {
+                  this.$emit('pick', {minDate: newDate, maxDate: this.minDate});
+                }
+              }
             }
-            this.rangeState.selecting = false;
+          } else {
+            if (!this.rangeState.selecting) {
+              this.$emit('pick', {minDate: newDate, maxDate: null});
+              this.rangeState.selecting = true;
+            } else {
+              if (newDate >= this.minDate) {
+                this.$emit('pick', {minDate: this.minDate, maxDate: newDate});
+              } else {
+                this.$emit('pick', {minDate: newDate, maxDate: this.minDate});
+              }
+              this.rangeState.selecting = false;
+            }
           }
         } else if (this.selectionMode === 'day') {
           this.$emit('pick', newDate);

@@ -290,3 +290,9 @@ export const extractTimeFormat = function(format) {
 export const validateRangeInOneMonth = function(start, end) {
   return (start.getMonth() === end.getMonth()) && (start.getFullYear() === end.getFullYear());
 };
+
+export const diffDays = function(start, end) {
+  // 时间差的毫秒数
+  const dates = end.getTime() - start.getTime();
+  return Math.floor(dates / (24 * 3600 * 1000));
+};
