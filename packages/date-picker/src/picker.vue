@@ -494,11 +494,11 @@ export default {
     },
 
     startFocusClass() {
-      return this.isSingleDateSelect && this.isStartFocus ? 'el-bottomLine' : '';
+      return this.isSingleDateSelect && this.isStartFocus ? 'el-focus' : '';
     },
 
     endFocusClass() {
-      return this.isSingleDateSelect && this.isEndFocus ? 'el-bottomLine' : '';
+      return this.isSingleDateSelect && this.isEndFocus ? 'el-focus' : '';
     },
 
     selectionMode() {
