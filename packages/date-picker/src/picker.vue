@@ -76,7 +76,7 @@
       :class="['el-range-input', endFocusClass]">
     <i
       @click="handleClickIcon"
-      v-if="haveTrigger"
+      v-if="haveTrigger&&showClose"
       :class="[showClose ? '' + clearIcon : '']"
       class="el-input__icon el-range__close-icon">
     </i>
